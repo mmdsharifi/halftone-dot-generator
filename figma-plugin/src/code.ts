@@ -1,4 +1,9 @@
-/// <reference types="@figma/plugin-typings" />
+// FIX: Replaced triple-slash directive with explicit type imports and global declarations
+// to resolve issues with TypeScript's type definition resolution for the Figma plugin API.
+import type { ImagePaint, PluginAPI } from '@figma/plugin-typings';
+
+declare const figma: PluginAPI;
+declare const __html__: string;
 
 figma.showUI(__html__, { width: 384, height: 720, title: "Halftone Controls" });
 

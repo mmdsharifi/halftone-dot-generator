@@ -1,3 +1,4 @@
+
 import React, { useEffect, useCallback, useRef } from 'react';
 import { HalftoneSettings, Dot } from '../../../core/src/types';
 import { lerpColor, generateDotsData, generateSvgString } from '../../../core/src';
@@ -5,7 +6,8 @@ import { lerpColor, generateDotsData, generateSvgString } from '../../../core/sr
 export const useHalftone = (
     canvasRef: React.RefObject<HTMLCanvasElement>,
     imageSrc: string | null,
-    settings: HalftoneSettings
+    settings: HalftoneSettings,
+    onError: (message: string) => void
 ) => {
     const { 
         dotShape, customCharacter, fillPattern, color1, color2, angle, imageBlur
@@ -102,6 +104,7 @@ export const useHalftone = (
         const img = new Image();
         img.crossOrigin = "Anonymous";
         img.src = imageSrc;
+        
         img.onload = () => {
             const aspectRatio = img.width / img.height;
             let canvasWidth = canvas.parentElement?.clientWidth || 512;
@@ -127,7 +130,11 @@ export const useHalftone = (
             ctx.filter = 'none';
             drawCanvas(dotsRef.current);
         };
-    }, [imageSrc, settings, canvasRef, drawCanvas, imageBlur]);
+
+        img.onerror = () => {
+            onError('Could not load image. The file may be corrupted or in an unsupported format.');
+        };
+    }, [imageSrc, settings, canvasRef, drawCanvas, imageBlur, onError]);
 
     const getSvgString = useCallback(() => {
         const canvas = canvasRef.current;

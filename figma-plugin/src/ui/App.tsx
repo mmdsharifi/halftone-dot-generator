@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { HalftoneSettings, generateDotsData, generateSvgString, Dot } from '../../../core/src';
+import { HalftoneSettings, generateDotsData, generateSvgString } from '../../../core/src';
 import { ControlsPanel } from './components/ControlsPanel';
 import { UploadIcon } from './components/Icon';
 
 const App: React.FC = () => {
-    const [imageInfo, setImageInfo] = useState<{ url: string; width: number; height: number } | null>(null);
+    const [imageElement, setImageElement] = useState<HTMLImageElement | null>(null);
     const [generatedSvg, setGeneratedSvg] = useState<string>('');
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const imageUrlRef = useRef<string | null>(null);
 
     const [settings, setSettings] = useState<HalftoneSettings>({
         resolution: 40,
@@ -29,52 +30,69 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        window.onmessage = async (event) => {
+        window.onmessage = (event) => {
             const msg = event.data.pluginMessage;
             if (msg.type === 'image-bytes') {
+                if (imageUrlRef.current) {
+                    URL.revokeObjectURL(imageUrlRef.current);
+                    imageUrlRef.current = null;
+                }
+
                 if (msg.bytes) {
-                    const blob = new Blob([msg.bytes], { type: 'image/png' }); // Type might vary, but this works for decoding
+                    const blob = new Blob([msg.bytes], { type: 'image/png' });
                     const url = URL.createObjectURL(blob);
+                    imageUrlRef.current = url;
                     
                     const img = new Image();
                     img.onload = () => {
-                        setImageInfo({ url, width: img.width, height: img.height });
+                        setImageElement(img);
+                    };
+                    img.onerror = () => {
+                        parent.postMessage({ pluginMessage: { type: 'notify', message: 'Could not load image. It may be corrupted or in an unsupported format.' } }, '*');
+                        setImageElement(null);
                         URL.revokeObjectURL(url);
+                        imageUrlRef.current = null;
                     };
                     img.src = url;
                 } else {
-                    setImageInfo(null);
+                    setImageElement(null);
                 }
             }
+        };
+
+        return () => {
+            if (imageUrlRef.current) {
+                URL.revokeObjectURL(imageUrlRef.current);
+            }
+            window.onmessage = null;
         };
     }, []);
 
     useEffect(() => {
-        if (!imageInfo) return;
+        if (!imageElement) {
+            setGeneratedSvg('');
+            return;
+        }
 
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.src = imageInfo.url;
-        img.onload = () => {
-            const offscreenCanvas = document.createElement('canvas');
-            offscreenCanvas.width = imageInfo.width;
-            offscreenCanvas.height = imageInfo.height;
-            const ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
-            if (!ctx) return;
-            
-            ctx.filter = settings.imageBlur > 0 ? `blur(${settings.imageBlur}px)` : 'none';
-            ctx.drawImage(img, 0, 0, imageInfo.width, imageInfo.height);
-            const imageData = ctx.getImageData(0, 0, imageInfo.width, imageInfo.height);
-            
-            const dots = generateDotsData(imageData.data, imageInfo.width, imageInfo.height, settings);
-            setGeneratedSvg(generateSvgString(dots, imageInfo.width, imageInfo.height, settings));
-        };
-
-    }, [imageInfo, settings]);
+        const { width, height } = imageElement;
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = width;
+        offscreenCanvas.height = height;
+        const ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
+        
+        ctx.filter = settings.imageBlur > 0 ? `blur(${settings.imageBlur}px)` : 'none';
+        ctx.drawImage(imageElement, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
+        
+        const dots = generateDotsData(imageData.data, width, height, settings);
+        setGeneratedSvg(generateSvgString(dots, width, height, settings));
+        
+    }, [imageElement, settings]);
 
 
     const handleGenerate = () => {
-        if (!generatedSvg || !imageInfo) {
+        if (!generatedSvg || !imageElement) {
             parent.postMessage({ pluginMessage: { type: 'notify', message: 'No image selected or SVG not ready.' } }, '*');
             return;
         }
@@ -82,15 +100,15 @@ const App: React.FC = () => {
             pluginMessage: { 
                 type: 'create-svg', 
                 svg: generatedSvg,
-                width: imageInfo.width,
-                height: imageInfo.height
+                width: imageElement.width,
+                height: imageElement.height
             } 
         }, '*');
     };
 
     return (
         <div className="flex flex-col h-screen">
-            {!imageInfo && (
+            {!imageElement && (
                 <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500 p-4">
                     <UploadIcon className="w-12 h-12 mb-4" />
                     <h2 className="font-bold text-lg">Select an Image</h2>
@@ -102,7 +120,7 @@ const App: React.FC = () => {
                 onSettingsChange={handleSettingsChange}
                 onImageUpload={() => {}} // Not used in plugin
                 onCopySvg={handleGenerate} // Repurposed for "Generate"
-                hasImage={!!imageInfo}
+                hasImage={!!imageElement}
                 isFigmaPlugin={true}
             />
         </div>

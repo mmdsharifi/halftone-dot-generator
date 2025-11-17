@@ -1,11 +1,21 @@
 {
-  "name": "Halftone Dot Generator",
-  "id": "1390494056294711904",
+  "name": "Halftone Studio",
+  "id": "1572164100267466103",
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "dist/ui.html",
-  "editorType": ["figma"],
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figma",
+    "figjam",
+    "slides",
+    "buzz"
+  ],
   "networkAccess": {
-    "allowedDomains": ["none"]
+    "allowedDomains": [
+      "none"
+    ]
   }
 }

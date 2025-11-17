@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { HalftoneSettings } from '../../core/src/types';
 import { ControlsPanel } from './components/ControlsPanel';
@@ -29,31 +30,44 @@ const App: React.FC = () => {
     fillPattern: 'solid',
     angle: 0,
   });
+  
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type, show: true });
+    setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+    }, 3000);
+  }, []);
 
-  const { getSvgString } = useHalftone(canvasRef, imageSrc, settings);
+  const handleImageError = useCallback((message: string) => {
+    showToast(message, 'error');
+    setImageSrc(null);
+  }, [showToast]);
+
+  const { getSvgString } = useHalftone(canvasRef, imageSrc, settings, handleImageError);
   
   const handleSettingsChange = useCallback(<K extends keyof HalftoneSettings>(key: K, value: HalftoneSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ message, type, show: true });
-    setTimeout(() => {
-        setToast(prev => ({ ...prev, show: false }));
-    }, 3000);
-  };
-
   const processImageFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) {
-        showToast('Invalid file type. Please use an image.', 'error');
+    if (!file || !file.type.startsWith('image/')) {
+        showToast('Unsupported file type. Please select an image.', 'error');
         return;
     }
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImageSrc(e.target?.result as string);
+        const result = e.target?.result as string;
+        if (result) {
+            setImageSrc(result);
+        } else {
+            showToast('Failed to read the image file.', 'error');
+        }
+    };
+    reader.onerror = () => {
+        showToast('Error reading file. The file may be corrupt.', 'error');
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [showToast]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
