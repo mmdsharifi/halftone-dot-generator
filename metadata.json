@@ -1,5 +1,5 @@
 {
-  "name": "Halftone Dot Generator",
+  "name": "Halftone Studio",
   "description": "An interactive tool to convert images into a customizable halftone dot pattern. Adjust grid size, dot shape, colors, and more, then export the result as an SVG for use in design tools like Figma.",
   "requestFramePermissions": []
 }
