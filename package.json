@@ -1,26 +1,19 @@
 {
-  "name": "halftone-dot-generator",
+  "name": "halftone-dot-generator-monorepo",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "homepage": "https://mmdsharifi.github.io/halftone-dot-generator/",
+  "version": "1.0.0",
+  "description": "A monorepo for the Halftone Dot Generator web app and Figma plugin.",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "dev": "npm run dev -w web-app",
+    "build": "npm run build -w web-app",
+    "deploy": "npm run deploy -w web-app",
+    "figma:dev": "npm run dev -w figma-plugin",
+    "figma:build": "npm run build -w figma-plugin"
   },
-  "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "gh-pages": "^6.1.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.3.1"
-  }
+  "workspaces": [
+    "web-app",
+    "figma-plugin"
+  ],
+  "author": "mmdsharifi",
+  "license": "MIT"
 }
