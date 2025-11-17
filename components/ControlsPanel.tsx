@@ -1,5 +1,5 @@
 import React from 'react';
-import { HalftoneSettings, DotShape } from '../types';
+import { HalftoneSettings, DotShape, FillPattern } from '../types';
 import { Slider } from './Slider';
 import { CopyIcon, UploadIcon } from './Icon';
 
@@ -38,6 +38,17 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
       onClick={() => onSettingsChange('dotShape', shape)}
       className={`px-3 py-2 text-sm rounded-md transition-colors w-full ${
         settings.dotShape === shape ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  const renderFillPatternButton = (pattern: FillPattern, label: string) => (
+    <button
+      onClick={() => onSettingsChange('fillPattern', pattern)}
+      className={`px-3 py-2 text-sm rounded-md transition-colors w-full ${
+        settings.fillPattern === pattern ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
       }`}
     >
       {label}
@@ -108,6 +119,14 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
             step={0.05}
             onChange={(e) => onSettingsChange('randomness', parseFloat(e.target.value))}
             />
+            <Slider
+            label="Dot Angle"
+            value={settings.angle}
+            min={-180}
+            max={180}
+            step={1}
+            onChange={(e) => onSettingsChange('angle', parseInt(e.target.value))}
+            />
             <div className="flex items-center justify-between pt-2">
                 <label htmlFor="invert-toggle" className="font-medium text-gray-300 text-sm">Invert Colors</label>
                 <button
@@ -121,6 +140,14 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                     settings.invert ? 'translate-x-6' : 'translate-x-1'
                 }`} />
                 </button>
+            </div>
+            <div className="pt-2">
+                <label className="font-medium text-gray-300 text-sm mb-2 block">Fill Pattern</label>
+                <div className="grid grid-cols-3 gap-2">
+                    {renderFillPatternButton('solid', 'Solid')}
+                    {renderFillPatternButton('stripes', 'Stripes')}
+                    {renderFillPatternButton('checkerboard', 'Checker')}
+                </div>
             </div>
         </Section>
         
@@ -161,11 +188,11 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex items-center gap-2">
                         <input type="color" value={settings.color1} onChange={e => onSettingsChange('color1', e.target.value)} className="w-8 h-8 p-0 border-none rounded cursor-pointer bg-transparent" />
-                        <span className="text-sm text-gray-300">{settings.useGradient ? 'Start' : 'Color'}</span>
+                        <span className="text-sm text-gray-300">{settings.useGradient ? 'Start' : 'Color 1'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <input type="color" value={settings.color2} onChange={e => onSettingsChange('color2', e.target.value)} className="w-8 h-8 p-0 border-none rounded cursor-pointer bg-transparent" />
-                        <span className="text-sm text-gray-300">End</span>
+                        <span className="text-sm text-gray-300">{settings.useGradient ? 'End' : 'Color 2'}</span>
                     </div>
                 </div>
             </div>

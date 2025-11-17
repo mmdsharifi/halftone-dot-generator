@@ -1,5 +1,5 @@
-
 export type DotShape = 'round' | 'square' | 'plus' | 'custom';
+export type FillPattern = 'solid' | 'stripes' | 'checkerboard';
 
 export interface HalftoneSettings {
   resolution: number;
@@ -13,4 +13,6 @@ export interface HalftoneSettings {
   color1: string;
   color2: string;
   customCharacter: string;
+  fillPattern: FillPattern;
+  angle: number;
 }

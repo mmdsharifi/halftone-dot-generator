@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { HalftoneSettings } from './types';
 import { ControlsPanel } from './components/ControlsPanel';
 import { CanvasDisplay } from './components/CanvasDisplay';
@@ -26,6 +26,8 @@ const App: React.FC = () => {
     color1: '#ffffff',
     color2: '#000000',
     customCharacter: '*',
+    fillPattern: 'solid',
+    angle: 0,
   });
 
   const { getSvgString } = useHalftone(canvasRef, imageSrc, settings);
@@ -34,22 +36,56 @@ const App: React.FC = () => {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImageSrc(e.target?.result as string);
-      };
-      reader.readAsDataURL(event.target.files[0]);
-    }
-  };
-
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type, show: true });
     setTimeout(() => {
         setToast(prev => ({ ...prev, show: false }));
     }, 3000);
   };
+
+  const processImageFile = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+        showToast('Invalid file type. Please use an image.', 'error');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImageSrc(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      processImageFile(event.target.files[0]);
+    }
+  };
+  
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            event.preventDefault();
+            processImageFile(file);
+            showToast('Image pasted successfully!', 'success');
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+    };
+  }, [processImageFile]);
+
 
   const handleCopySvg = async () => {
     if (!imageSrc || !getSvgString) return;
@@ -69,7 +105,12 @@ const App: React.FC = () => {
     <div className="h-screen bg-gray-900 text-gray-200 grid grid-cols-[1fr_384px] font-sans">
       <main className="flex items-center justify-center p-8 overflow-hidden">
         <div className="w-full h-full max-w-full max-h-full">
-            <CanvasDisplay canvasRef={canvasRef} hasImage={!!imageSrc} onUpload={handleImageUpload} />
+            <CanvasDisplay 
+                canvasRef={canvasRef} 
+                hasImage={!!imageSrc} 
+                onUpload={handleImageUpload}
+                onFileDrop={processImageFile}
+            />
         </div>
       </main>
       <aside className="border-l border-gray-700/50">
