@@ -1,10 +1,10 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { HalftoneSettings } from '../../core/src/types';
-import { ControlsPanel } from './components/ControlsPanel';
-import { CanvasDisplay } from './components/CanvasDisplay';
+import { ControlsPanel } from '../../components/ControlsPanel';
+import { CanvasDisplay } from '../../components/CanvasDisplay';
 import { useHalftone } from './hooks/useHalftone';
-import { Toast } from './components/Toast';
+import { Toast } from '../../components/Toast';
 
 const App: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);

@@ -67,5 +67,6 @@ The Figma plugin brings the power of the halftone generator directly into your d
 
 ### Development (Figma Plugin)
 
--   Run the development watcher: `npm run figma:dev`
--   This will watch for changes and rebuild the plugin automatically. You may need to close and re-run the plugin in Figma to see the changes.
+-   Run the development watcher: `npm run figma:dev` (keeps the plugin code bundled in `dist/`).
+-   Start the UI dev server with hot reload: `npm run figma:ui`. The plugin automatically redirects its iframe to `http://localhost:5175/ui.html`, so any edits in `figma-plugin/src/ui` reload instantly inside Figma.
+-   When you're done, stop the dev server so production builds (`npm run figma:build`) go back to the bundled UI that ships in the manifest.

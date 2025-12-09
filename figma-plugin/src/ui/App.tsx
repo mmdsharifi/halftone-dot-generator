@@ -107,12 +107,12 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-screen">
+        <div className="app">
             {!imageElement && (
-                <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500 p-4">
-                    <UploadIcon className="w-12 h-12 mb-4" />
-                    <h2 className="font-bold text-lg">Select an Image</h2>
-                    <p className="text-sm">Select a single layer with an image fill in Figma to begin.</p>
+                <div className="app__placeholder">
+                    <UploadIcon className="app__placeholder-icon" />
+                    <h2 className="app__placeholder-title">Select an Image</h2>
+                    <p className="app__placeholder-text">Select a single layer with an image fill in Figma to begin.</p>
                 </div>
             )}
             <ControlsPanel

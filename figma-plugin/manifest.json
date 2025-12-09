@@ -16,6 +16,10 @@
   "networkAccess": {
     "allowedDomains": [
       "none"
-    ]
+    ],
+    "devAllowedDomains": [
+      "http://localhost:5175"
+    ],
+    "reasoning": "Halftone Studio needs localhost only while running the UI dev server for plugin development."
   }
 }

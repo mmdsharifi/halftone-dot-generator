@@ -1,26 +1,30 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { viteSingleFile } from 'vite-plugin-singlefile'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { resolve } from "path";
 
 export default defineConfig({
-  plugins: [react(), viteSingleFile()],
-  root: 'src',
+  plugins: [react()],
+  root: "src",
+  base: "./",
   build: {
-    outDir: '../dist',
+    outDir: "../dist",
+    cssCodeSplit: false,
     rollupOptions: {
       input: {
-        ui: './src/ui.html',
-        code: './src/code.ts',
+        ui: resolve(__dirname, "src/ui.html"),
+        code: resolve(__dirname, "src/code.ts"),
       },
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: "[name].js",
+        chunkFileNames: "chunks/[name]-[hash].js",
+        assetFileNames: "assets/[name][extname]",
       },
     },
     emptyOutDir: true,
   },
   server: {
     fs: {
-      allow: ['..']
-    }
-  }
-})
+      allow: [".."],
+    },
+  },
+});

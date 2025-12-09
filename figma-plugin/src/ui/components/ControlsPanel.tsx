@@ -13,13 +13,11 @@ interface ControlsPanelProps {
 }
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div className="py-5 border-b border-gray-700/50 last:border-b-0">
-      <h2 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-4">{title}</h2>
-      <div className="space-y-4">
-        {children}
-      </div>
-    </div>
-  );
+  <div className="controls__section">
+    <h2 className="controls__section-title">{title}</h2>
+    <div className="controls__section-content">{children}</div>
+  </div>
+);
 
 export const ControlsPanel: React.FC<ControlsPanelProps> = ({
   settings,
@@ -30,9 +28,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
   const renderShapeButton = (shape: DotShape, label: string) => (
     <button
       onClick={() => onSettingsChange('dotShape', shape)}
-      className={`px-3 py-2 text-sm rounded-md transition-colors w-full ${
-        settings.dotShape === shape ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
-      }`}
+      className={`chip-button ${settings.dotShape === shape ? 'chip-button--active' : ''}`}
     >
       {label}
     </button>
@@ -41,21 +37,19 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
   const renderFillPatternButton = (pattern: FillPattern, label: string) => (
     <button
       onClick={() => onSettingsChange('fillPattern', pattern)}
-      className={`px-3 py-2 text-sm rounded-md transition-colors w-full ${
-        settings.fillPattern === pattern ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
-      }`}
+      className={`chip-button ${settings.fillPattern === pattern ? 'chip-button--active' : ''}`}
     >
       {label}
     </button>
   );
 
   return (
-    <div className="h-screen bg-gray-800 flex flex-col text-gray-200">
-       <header className="p-6 border-b border-gray-700/50">
-         <h1 className="text-xl font-bold text-center text-white">Halftone Controls</h1>
+    <div className="controls">
+       <header className="controls__header">
+         <h1 className="controls__title">Halftone Controls</h1>
       </header>
         
-      <div className="flex-grow px-6 overflow-y-auto">
+      <div className="controls__body">
         <Section title="Layout & Size">
             <Slider
             label="Resolution"
@@ -76,20 +70,20 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
         </Section>
         
         <Section title="Dot Shape">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="controls__grid controls__grid--four">
                 {renderShapeButton('round', 'Round')}
                 {renderShapeButton('square', 'Square')}
                 {renderShapeButton('plus', '+')}
                 {renderShapeButton('custom', 'Custom')}
             </div>
             {settings.dotShape === 'custom' && (
-            <div className="pt-2">
+            <div>
                 <input
                 type="text"
                 maxLength={2}
                 value={settings.customCharacter}
                 onChange={(e) => onSettingsChange('customCharacter', e.target.value.slice(0, 2))}
-                className="w-full bg-gray-700/50 p-2 rounded-md text-center font-bold text-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                className="controls__input"
                 placeholder="?"
                 />
             </div>
@@ -121,23 +115,19 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
             step={1}
             onChange={(e) => onSettingsChange('angle', parseInt(e.target.value))}
             />
-            <div className="flex items-center justify-between pt-2">
-                <label htmlFor="invert-toggle" className="font-medium text-gray-300 text-sm">Invert Colors</label>
+            <div className="controls__button-row">
+                <label htmlFor="invert-toggle" className="controls__label">Invert Colors</label>
                 <button
                 id="invert-toggle"
                 onClick={() => onSettingsChange('invert', !settings.invert)}
-                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                    settings.invert ? 'bg-indigo-500' : 'bg-gray-600'
-                }`}
+                className={`toggle ${settings.invert ? 'toggle--active' : ''}`}
                 >
-                <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                    settings.invert ? 'translate-x-6' : 'translate-x-1'
-                }`} />
+                <span className="toggle__thumb" />
                 </button>
             </div>
-            <div className="pt-2">
-                <label className="font-medium text-gray-300 text-sm mb-2 block">Fill Pattern</label>
-                <div className="grid grid-cols-3 gap-2">
+            <div>
+                <label className="controls__label">Fill Pattern</label>
+                <div className="controls__grid controls__grid--three" style={{ marginTop: '0.5rem' }}>
                     {renderFillPatternButton('solid', 'Solid')}
                     {renderFillPatternButton('stripes', 'Stripes')}
                     {renderFillPatternButton('checkerboard', 'Checker')}
@@ -146,60 +136,52 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
         </Section>
         
         <Section title="Color & Gradient">
-             <div className="flex items-center justify-between">
-                <label htmlFor="gradient-toggle" className="font-medium text-gray-300 text-sm">Use Gradient</label>
+             <div className="controls__button-row">
+                <label htmlFor="gradient-toggle" className="controls__label">Use Gradient</label>
                 <button
                 id="gradient-toggle"
                 onClick={() => onSettingsChange('useGradient', !settings.useGradient)}
-                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                    settings.useGradient ? 'bg-indigo-500' : 'bg-gray-600'
-                }`}
+                className={`toggle ${settings.useGradient ? 'toggle--active' : ''}`}
                 >
-                <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                    settings.useGradient ? 'translate-x-6' : 'translate-x-1'
-                }`} />
+                <span className="toggle__thumb" />
                 </button>
             </div>
-            <div className={`space-y-4 pt-2 transition-opacity duration-300 ${settings.useGradient ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-                <div className="grid grid-cols-2 gap-2">
+            <div className={`controls__gradient-settings ${settings.useGradient ? '' : 'is-disabled'}`}>
+                <div className="controls__grid controls__grid--two">
                     <button
                         onClick={() => onSettingsChange('gradientDirection', 'vertical')}
-                        className={`px-3 py-1.5 text-xs rounded-md transition-colors w-full ${
-                            settings.gradientDirection === 'vertical' ? 'bg-indigo-600 text-white' : 'bg-gray-600 hover:bg-gray-500'
-                        }`}
+                        className={`chip-button ${settings.gradientDirection === 'vertical' ? 'chip-button--active' : ''}`}
                         >
                         Vertical
                     </button>
                     <button
                         onClick={() => onSettingsChange('gradientDirection', 'horizontal')}
-                        className={`px-3 py-1.5 text-xs rounded-md transition-colors w-full ${
-                            settings.gradientDirection === 'horizontal' ? 'bg-indigo-600 text-white' : 'bg-gray-600 hover:bg-gray-500'
-                        }`}
+                        className={`chip-button ${settings.gradientDirection === 'horizontal' ? 'chip-button--active' : ''}`}
                         >
                         Horizontal
                     </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2">
-                        <input type="color" value={settings.color1} onChange={e => onSettingsChange('color1', e.target.value)} className="w-8 h-8 p-0 border-none rounded cursor-pointer bg-transparent" />
-                        <span className="text-sm text-gray-300">{settings.useGradient ? 'Start' : 'Color 1'}</span>
+                <div className="controls__gap-md">
+                    <div className="controls__color-row">
+                        <input type="color" value={settings.color1} onChange={e => onSettingsChange('color1', e.target.value)} className="controls__color-input" />
+                        <span className="controls__color-label">{settings.useGradient ? 'Start' : 'Color 1'}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <input type="color" value={settings.color2} onChange={e => onSettingsChange('color2', e.target.value)} className="w-8 h-8 p-0 border-none rounded cursor-pointer bg-transparent" />
-                        <span className="text-sm text-gray-300">{settings.useGradient ? 'End' : 'Color 2'}</span>
+                    <div className="controls__color-row">
+                        <input type="color" value={settings.color2} onChange={e => onSettingsChange('color2', e.target.value)} className="controls__color-input" />
+                        <span className="controls__color-label">{settings.useGradient ? 'End' : 'Color 2'}</span>
                     </div>
                 </div>
             </div>
         </Section>
       </div>
       
-      <footer className="p-6 border-t border-gray-700/50 bg-gray-800">
+      <footer className="controls__footer">
         <button
           onClick={onCopySvg}
           disabled={!hasImage}
-          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2.5 px-4 rounded-md transition-colors"
+          className="controls__primary-btn"
         >
-          <CopyIcon className="w-5 h-5" />
+          <CopyIcon />
           Create SVG
         </button>
       </footer>

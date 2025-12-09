@@ -8,6 +8,7 @@
     "build": "npm run build -w web-app",
     "deploy": "npm run deploy -w web-app",
     "figma:dev": "npm run dev -w figma-plugin",
+    "figma:ui": "npm run ui -w figma-plugin",
     "figma:build": "npm run build -w figma-plugin"
   },
   "workspaces": [

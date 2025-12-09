@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch",
-    "build": "vite build"
+    "dev": "vite build --watch --mode development",
+    "ui": "vite dev --host=127.0.0.1 --port=5175 --open ui.html",
+    "build": "vite build",
+    "preview": "vite preview",
+    "watch": "vite build --watch --mode development",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -13,11 +17,13 @@
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.99.0",
+    "@types/node": "^20.19.25",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.2.2",
-    "vite": "^5.3.1",
+    "vite": "^5.4.21",
+    "vite-plugin-checker": "^0.7.2",
     "vite-plugin-singlefile": "^2.0.1"
   }
 }
