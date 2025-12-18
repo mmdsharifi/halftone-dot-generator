@@ -30,6 +30,8 @@ const App: React.FC = () => {
     fillPattern: 'solid',
     angle: 0,
   });
+
+  const [zoom, setZoom] = useState<number>(1);
   
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type, show: true });
@@ -43,10 +45,21 @@ const App: React.FC = () => {
     setImageSrc(null);
   }, [showToast]);
 
-  const { getSvgString } = useHalftone(canvasRef, imageSrc, settings, handleImageError);
+  const { getSvgString, svgString } = useHalftone(
+    canvasRef,
+    imageSrc,
+    settings,
+    handleImageError
+  );
   
   const handleSettingsChange = useCallback(<K extends keyof HalftoneSettings>(key: K, value: HalftoneSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleZoomChange = useCallback((nextZoom: number) => {
+    // Clamp zoom between 25% and 400%
+    const clamped = Math.min(4, Math.max(0.25, nextZoom));
+    setZoom(clamped);
   }, []);
 
   const processImageFile = useCallback((file: File) => {
@@ -74,6 +87,11 @@ const App: React.FC = () => {
       processImageFile(event.target.files[0]);
     }
   };
+  
+  // Reset zoom when a new image is loaded or cleared
+  useEffect(() => {
+    setZoom(1);
+  }, [imageSrc]);
   
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
@@ -117,14 +135,17 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen bg-gray-900 text-gray-200 grid grid-cols-[1fr_384px] font-sans">
-      <main className="flex items-center justify-center p-8 overflow-hidden">
+      <main className="flex items-center justify-center overflow-hidden">
         <div className="w-full h-full max-w-full max-h-full">
-            <CanvasDisplay 
-                canvasRef={canvasRef} 
-                hasImage={!!imageSrc} 
-                onUpload={handleImageUpload}
-                onFileDrop={processImageFile}
-            />
+          <CanvasDisplay
+            canvasRef={canvasRef}
+            hasImage={!!imageSrc}
+            onUpload={handleImageUpload}
+            onFileDrop={processImageFile}
+            svgMarkup={svgString}
+            zoom={zoom}
+            onZoomChange={handleZoomChange}
+          />
         </div>
       </main>
       <aside className="border-l border-gray-700/50">

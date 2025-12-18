@@ -10,5 +10,10 @@ export default defineConfig({
       // Allow serving files from the parent directory (for core)
       allow: ['..']
     }
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setupTests.ts'
   }
 })

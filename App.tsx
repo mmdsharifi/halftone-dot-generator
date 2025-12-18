@@ -13,6 +13,7 @@ const App: React.FC = () => {
     type: 'success',
     show: false,
   });
+  const toastTimeoutRef = useRef<number | null>(null);
 
   const [settings, setSettings] = useState<HalftoneSettings>({
     resolution: 40,
@@ -36,12 +37,23 @@ const App: React.FC = () => {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    if (toastTimeoutRef.current) {
+      window.clearTimeout(toastTimeoutRef.current);
+    }
     setToast({ message, type, show: true });
-    setTimeout(() => {
+    toastTimeoutRef.current = window.setTimeout(() => {
         setToast(prev => ({ ...prev, show: false }));
     }, 3000);
-  };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        window.clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const processImageFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -53,7 +65,7 @@ const App: React.FC = () => {
       setImageSrc(e.target?.result as string);
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [showToast]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -84,10 +96,10 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('paste', handlePaste);
     };
-  }, [processImageFile]);
+  }, [processImageFile, showToast]);
 
 
-  const handleCopySvg = async () => {
+  const handleCopySvg = useCallback(async () => {
     if (!imageSrc || !getSvgString) return;
     const svgString = getSvgString();
     if (svgString) {
@@ -99,11 +111,11 @@ const App: React.FC = () => {
         showToast('Failed to copy SVG.', 'error');
       }
     }
-  };
+  }, [getSvgString, imageSrc, showToast]);
 
   return (
     <div className="h-screen bg-gray-900 text-gray-200 grid grid-cols-[1fr_384px] font-sans">
-      <main className="flex items-center justify-center p-8 overflow-hidden">
+      <main className="flex items-center justify-center overflow-hidden">
         <div className="w-full h-full max-w-full max-h-full">
             <CanvasDisplay 
                 canvasRef={canvasRef} 

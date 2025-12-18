@@ -1,4 +1,3 @@
-// FIX: Import React to resolve "Cannot find namespace 'React'" error.
 import React, { useEffect, useCallback, useRef } from 'react';
 import { HalftoneSettings } from '../types';
 import { lerpColor } from '../utils/color';
@@ -9,6 +8,11 @@ interface Dot {
     size: number;
     color: string;
 }
+
+const getSafeCanvasSize = (canvas: HTMLCanvasElement | null) => ({
+    width: canvas?.width ?? 0,
+    height: canvas?.height ?? 0,
+});
 
 export const useHalftone = (
     canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -21,8 +25,25 @@ export const useHalftone = (
     } = settings;
 
     const dotsRef = useRef<Dot[]>([]);
+    const imageElementRef = useRef<HTMLImageElement | null>(null);
+    const canvasSizeRef = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
 
-    const generateDotsData = useCallback((img: HTMLImageElement, canvasWidth: number, canvasHeight: number): Dot[] => {
+    const computeDotColor = useCallback((x: number, y: number) => {
+        const { width, height } = canvasSizeRef.current;
+        if (useGradient && width && height) {
+            const gradientPos = gradientDirection === 'vertical' ? (y / height) : (x / width);
+            return lerpColor(color1, color2, gradientPos);
+        }
+        return color1;
+    }, [useGradient, gradientDirection, color1, color2]);
+
+    const generateDotsData = useCallback((img: HTMLImageElement): Dot[] => {
+        const canvas = canvasRef.current;
+        if (!canvas) return [];
+
+        const canvasWidth = canvasSizeRef.current.width || img.width;
+        const canvasHeight = canvasSizeRef.current.height || img.height;
+
         const offscreenCanvas = document.createElement('canvas');
         const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
         if (!offscreenCtx) return [];
@@ -39,8 +60,8 @@ export const useHalftone = (
         const data = imageData.data;
         const dots: Dot[] = [];
 
-        const cols = resolution;
-        const rows = Math.round(cols * (canvasHeight / canvasWidth));
+        const cols = Math.max(1, resolution);
+        const rows = Math.max(1, Math.round(cols * (canvasHeight / canvasWidth)));
         const cellWidth = canvasWidth / cols;
         const cellHeight = canvasHeight / rows;
 
@@ -68,22 +89,19 @@ export const useHalftone = (
                 const randX = (Math.random() - 0.5) * randomness * cellWidth;
                 const randY = (Math.random() - 0.5) * randomness * cellHeight;
                 
-                let color = color1;
-                if (useGradient) {
-                    const gradientPos = gradientDirection === 'vertical' ? (y / canvasHeight) : (x / canvasWidth);
-                    color = lerpColor(color1, color2, gradientPos);
-                }
+                const centerX = x + cellWidth / 2 + randX;
+                const centerY = y + cellHeight / 2 + randY;
 
                 dots.push({
-                    x: x + cellWidth / 2 + randX,
-                    y: y + cellHeight / 2 + randY,
+                    x: centerX,
+                    y: centerY,
                     size,
-                    color,
+                    color: computeDotColor(centerX, centerY),
                 });
             }
         }
         return dots;
-    }, [resolution, dotSize, imageBlur, invert, useGradient, gradientDirection, randomness, color1, color2]);
+    }, [canvasRef, resolution, dotSize, imageBlur, invert, randomness, computeDotColor]);
 
     const drawCanvas = useCallback((dots: Dot[]) => {
         const canvas = canvasRef.current;
@@ -162,6 +180,24 @@ export const useHalftone = (
     
     }, [canvasRef, dotShape, customCharacter, fillPattern, color1, color2, angle]);
     
+    const regenerateDots = useCallback(() => {
+        if (!imageElementRef.current) return;
+        dotsRef.current = generateDotsData(imageElementRef.current);
+        drawCanvas(dotsRef.current);
+    }, [drawCanvas, generateDotsData]);
+
+    const recolorDots = useCallback(() => {
+        if (!dotsRef.current.length) return;
+        const { width, height } = getSafeCanvasSize(canvasRef.current);
+        dotsRef.current = dotsRef.current.map(dot => ({
+            ...dot,
+            color: computeDotColor(dot.x, dot.y),
+        }));
+        // Ensure we have the latest canvas bounds for gradient calculation.
+        if (width && height) {
+            canvasSizeRef.current = { width, height };
+        }
+    }, [canvasRef, computeDotColor]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -169,6 +205,7 @@ export const useHalftone = (
             const ctx = canvas?.getContext('2d');
             if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
             dotsRef.current = [];
+            imageElementRef.current = null;
             return;
         };
 
@@ -179,22 +216,44 @@ export const useHalftone = (
             const aspectRatio = img.width / img.height;
             let canvasWidth = canvas.parentElement?.clientWidth || 512;
             let canvasHeight = canvasWidth / aspectRatio;
-            if (canvasHeight > (canvas.parentElement?.clientHeight || 512)) {
-                canvasHeight = canvas.parentElement?.clientHeight || 512;
+            const maxHeight = canvas.parentElement?.clientHeight || 512;
+            if (canvasHeight > maxHeight) {
+                canvasHeight = maxHeight;
                 canvasWidth = canvasHeight * aspectRatio;
             }
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
-            dotsRef.current = generateDotsData(img, canvas.width, canvas.height);
-            drawCanvas(dotsRef.current);
+            canvasSizeRef.current = { width: canvasWidth, height: canvasHeight };
+            imageElementRef.current = img;
+            regenerateDots();
         };
-    }, [imageSrc, settings, canvasRef, generateDotsData, drawCanvas]);
+    }, [imageSrc, canvasRef, regenerateDots]);
+
+    useEffect(() => {
+        if (!imageElementRef.current) return;
+        regenerateDots();
+    }, [resolution, dotSize, imageBlur, invert, randomness, regenerateDots]);
+
+    useEffect(() => {
+        if (!dotsRef.current.length) return;
+        recolorDots();
+        drawCanvas(dotsRef.current);
+    }, [recolorDots, drawCanvas, useGradient, gradientDirection, color1, color2]);
+
+    useEffect(() => {
+        if (!dotsRef.current.length) return;
+        drawCanvas(dotsRef.current);
+    }, [drawCanvas, dotShape, fillPattern, customCharacter, angle]);
 
     const getSvgString = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || dotsRef.current.length === 0) return '';
     
         const dots = dotsRef.current;
+        const { width, height } = canvasSizeRef.current.width && canvasSizeRef.current.height
+            ? canvasSizeRef.current
+            : getSafeCanvasSize(canvas);
+
         let svgElements = '';
         let svgDefs = '';
     
@@ -244,8 +303,8 @@ export const useHalftone = (
             }
         });
     
-        return `<svg width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}" xmlns="http://www.w3.org/2000/svg">${svgDefs ? `\n${svgDefs}\n` : '\n'}${svgElements}</svg>`;
-    }, [settings, canvasRef]);
+        return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${svgDefs ? `\n${svgDefs}\n` : '\n'}${svgElements}</svg>`;
+    }, [fillPattern, dotShape, angle, customCharacter, color1, color2, canvasRef]);
 
     return { getSvgString };
 };

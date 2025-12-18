@@ -1,5 +1,5 @@
 
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { HalftoneSettings, Dot } from '../../../core/src/types';
 import { lerpColor, generateDotsData, generateSvgString } from '../../../core/src';
 
@@ -9,11 +9,22 @@ export const useHalftone = (
     settings: HalftoneSettings,
     onError: (message: string) => void
 ) => {
-    const { 
-        dotShape, customCharacter, fillPattern, color1, color2, angle, imageBlur
+    const {
+        dotShape,
+        customCharacter,
+        fillPattern,
+        color1,
+        color2,
+        angle,
+        imageBlur,
     } = settings;
 
     const dotsRef = useRef<Dot[]>([]);
+    const [svgString, setSvgString] = useState<string>('');
+    const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({
+        width: 0,
+        height: 0,
+    });
     
     const drawCanvas = useCallback((dots: Dot[]) => {
         const canvas = canvasRef.current;
@@ -98,8 +109,10 @@ export const useHalftone = (
             const ctx = canvas?.getContext('2d');
             if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
             dotsRef.current = [];
+            setSvgString('');
+            setCanvasSize({ width: 0, height: 0 });
             return;
-        };
+        }
 
         const img = new Image();
         img.crossOrigin = "Anonymous";
@@ -115,32 +128,52 @@ export const useHalftone = (
             }
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
+            setCanvasSize({ width: canvasWidth, height: canvasHeight });
 
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
             if (!ctx) return;
-            
+
             // Apply blur before getting image data
             ctx.filter = imageBlur > 0 ? `blur(${imageBlur}px)` : 'none';
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-            dotsRef.current = generateDotsData(imageData.data, canvas.width, canvas.height, settings);
-            
+            dotsRef.current = generateDotsData(
+                imageData.data,
+                canvas.width,
+                canvas.height,
+                settings
+            );
+
             // Reset filter before drawing dots to avoid blurring the dots
             ctx.filter = 'none';
             drawCanvas(dotsRef.current);
+
+            // Also cache SVG markup for scalable rendering
+            const svg = generateSvgString(
+                dotsRef.current,
+                canvas.width,
+                canvas.height,
+                settings
+            );
+            setSvgString(svg);
         };
 
         img.onerror = () => {
             onError('Could not load image. The file may be corrupted or in an unsupported format.');
+            setSvgString('');
+            setCanvasSize({ width: 0, height: 0 });
         };
     }, [imageSrc, settings, canvasRef, drawCanvas, imageBlur, onError]);
 
     const getSvgString = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || dotsRef.current.length === 0) return '';
+        if (svgString) {
+            return svgString;
+        }
         return generateSvgString(dotsRef.current, canvas.width, canvas.height, settings);
-    }, [settings, canvasRef]);
+    }, [settings, canvasRef, svgString]);
 
-    return { getSvgString };
+    return { getSvgString, svgString, canvasSize };
 };
